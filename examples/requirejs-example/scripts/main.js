@@ -1,30 +1,59 @@
-require(["scripts/fh-js.js"], function(fh) {
-
-  document.getElementById('run_button').onclick = function() {
-
-    fh.init2("https://apps.feedhenry.example.com/box/srv/1.1/app/init?appKey=EF_ERidviTlOPiGrt6pCOr6b&deviceID=1234&appId=EF_ERidviTlOPiGrt6pCOr6b",
-            function(err, res) {
-      if (err != null) {
-        alert('An error occured: ' + err.statusText + ' : ' + err.message);
-      } else {
-        alert(JSON.stringify(res));
-        document.getElementById('cloudConfig').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-      }
-    });
-
-//    fh.init({
-//      "host": "http://apps-uyz1ik3hmek9zhegqlf4obuy-dev.dynofarm.me:9080"
-//    });
-//
-//    fh.call("getConfig", {
-//      "testkey": "testval"
-//    }, function(err, res) {
-//      if (err != null) {
-//        alert('An error occured: ' + err.statusText + ' : ' + err.message);
-//      } else {
-//        alert(JSON.stringify(res.config));
-//        document.getElementById('cloudConfig').innerHTML = "<p>" + JSON.stringify(res.config) + "</p>";
-//      }
-//    });
+require(["scripts/feedhenry.js"], function(fh) {
+  var config = {
+    apiurl:"https://apps.feedhenry.example.com",
+    appid: "EF_ERidviTlOPiGrt6pCOr6b",
+    appkey: "EF_ERidviTlOPiGrt6pCOr6b",
+    mode: "debug"
   };
+
+  fh_init();
+
+  document.getElementById('run_init_button').onclick = function() {
+    fh_init();
+  };
+
+  function fh_init() {
+    $fh.init(config,
+            function(err, res) {
+              if (err != null) {
+                alert('An error occured: ' + err.statusText + ' : ' + err.message);
+              } else {
+                document.getElementById('initResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+              }
+            });
+  }
+
+  document.getElementById('run_action_button').onclick = function() {
+    var options = {
+      guid: "EF_ERidviTlOPiGrt6pCOr6b",
+      endpoint: "getConfig",
+      params: {
+        somekey: "someval"
+      }
+    };
+    $fh.act(options,
+            function(err, res) {
+              if (err != null) {
+                alert('An error occured: ' + err.statusText + ' : ' + err.message);
+              } else {
+                document.getElementById('actResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+              }
+            });
+  };
+
+  document.getElementById('run_auth_button').onclick = function() {
+    var options = {
+      policyId: "FeedHenry",
+      clientToken: "EF_ERidviTlOPiGrt6pCOr6b"
+    };
+    $fh.auth(options,
+            function(err, res) {
+              if (err != null) {
+                alert('An error occured: ' + err.statusText + ' : ' + err.message);
+              } else {
+                document.getElementById('authResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+              }
+            });
+  };
+
 });
