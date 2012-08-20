@@ -57,10 +57,10 @@ $fh = {
     }
 
     if (!opts.endpoint) {
-      return f('act_no_endpoint');
+      return cb('act_no_endpoint');
     }
     if (!opts.guid) {
-      return f('act_no_guid');
+      return cb('act_no_guid');
     }
 
     //ToDo Should be selectable by mode
