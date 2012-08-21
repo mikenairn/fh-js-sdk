@@ -1,12 +1,13 @@
 require(["scripts/feedhenry.js"], function(fh) {
   var config = {
-    apiurl:"https://apps.feedhenry.example.com",
-    appid: "EF_ERidviTlOPiGrt6pCOr6b",
-    appkey: "EF_ERidviTlOPiGrt6pCOr6b",
+    host:"http://engtest.every.henora.net",
+    appid: "FRSxYsC1o5kke8USg1EXBQ25",
+    appkey: "a29ff8af58715e9c7e3d5c84d2e6d368db8cf21b",
     mode: "debug"
   };
 
-  fh_init();
+  //fh_init();
+  $fh.init(config, function(){}, function(){});
 
   document.getElementById('run_init_button').onclick = function() {
     fh_init();
@@ -14,46 +15,48 @@ require(["scripts/feedhenry.js"], function(fh) {
 
   function fh_init() {
     $fh.init(config,
-            function(err, res) {
-              if (err != null) {
-                alert('An error occured: ' + err.statusText + ' : ' + err.message);
-              } else {
-                document.getElementById('initResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-              }
+            function(res) {
+              document.getElementById('initResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+            }, function(){
+
             });
   }
 
   document.getElementById('run_action_button').onclick = function() {
     var options = {
-      guid: "EF_ERidviTlOPiGrt6pCOr6b",
-      endpoint: "getConfig",
+      act: "getConfig",
       params: {
         somekey: "someval"
       }
     };
     $fh.act(options,
-            function(err, res) {
-              if (err != null) {
-                alert('An error occured: ' + err.statusText + ' : ' + err.message);
-              } else {
-                document.getElementById('actResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-              }
+            function(res) {
+              document.getElementById('actResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+            }, function(err){
+              alert(err);
             });
   };
 
   document.getElementById('run_auth_button').onclick = function() {
     var options = {
-      policyId: "FeedHenry",
-      clientToken: "EF_ERidviTlOPiGrt6pCOr6b"
+      policyId: "test3",
+      clientToken: "FRSxYsC1o5kke8USg1EXBQ25",
+      endRedirectUrl: window.location.href,
+      authCallback: "authLoggin",
+      params: {
+       
+      }
     };
     $fh.auth(options,
-            function(err, res) {
-              if (err != null) {
-                alert('An error occured: ' + err.statusText + ' : ' + err.message);
-              } else {
-                document.getElementById('authResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-              }
+            function(res) {
+              document.getElementById('authResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+            }, function(err){
+              alert(err);
             });
   };
 
 });
+
+function authLoggin(res){
+  
+}

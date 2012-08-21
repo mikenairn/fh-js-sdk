@@ -1,182 +1,565 @@
-// insert into global namespace
-$fh = {
-  APP_MODE_DEBUG: 'debug',
-  APP_MODE_RELEASE: 'release',
-  APP_MODE_DISTRIBUTION: 'distribution',
-  CLOUD_TYPE_FH: 'fh',
-  CLOUD_TYPE_NODE: 'node'
-};
+/*
+    json2.js
+    2011-10-19
 
-(function() {
-  var options;
-  var cloudProps;
+    Public Domain.
 
-  $fh.init = function(opts, cb) {
-    if (!opts.apiurl) {
-      return f('init_no_apiurl');
-    }
-    if (!opts.appid) {
-      return f('init_no_appId');
-    }
-    if (!opts.appkey) {
-      return f('init_no_appKey');
-    }
-    var udid = $fh.__readCookieValue($fh._mock_uuid_cookie_name);
-    if (null == udid) {
-      udid = $fh.__createUUID();
-      $fh.__createCookie($fh._mock_uuid_cookie_name, udid);
-    }
-    options = opts;
+    NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
 
-    var path = $fh.boxprefix + "app/init";
-    var url = options.apiurl + path + "?appKey=" + options.appkey + "&appId=" + options.appid + "&deviceID=" + udid;
+    See http://www.JSON.org/js.html
 
-    return $fh.__ajax({
-      "url": url,
-      "method": "POST",
-      success: function(res) {
-        cloudProps = JSON.parse(JSON.stringify(res));
-        cb(null, res);
-      },
-      error: function(req, statusText, error) {
-        cb({
-          "req": req,
-          "statusText": statusText,
-          "message": error
-        });
+
+    This code should be minified before deployment.
+    See http://javascript.crockford.com/jsmin.html
+
+    USE YOUR OWN COPY. IT IS EXTREMELY UNWISE TO LOAD CODE FROM SERVERS YOU DO
+    NOT CONTROL.
+
+
+    This file creates a global JSON object containing two methods: stringify
+    and parse.
+
+        JSON.stringify(value, replacer, space)
+            value       any JavaScript value, usually an object or array.
+
+            replacer    an optional parameter that determines how object
+                        values are stringified for objects. It can be a
+                        function or an array of strings.
+
+            space       an optional parameter that specifies the indentation
+                        of nested structures. If it is omitted, the text will
+                        be packed without extra whitespace. If it is a number,
+                        it will specify the number of spaces to indent at each
+                        level. If it is a string (such as '\t' or '&nbsp;'),
+                        it contains the characters used to indent at each level.
+
+            This method produces a JSON text from a JavaScript value.
+
+            When an object value is found, if the object contains a toJSON
+            method, its toJSON method will be called and the result will be
+            stringified. A toJSON method does not serialize: it returns the
+            value represented by the name/value pair that should be serialized,
+            or undefined if nothing should be serialized. The toJSON method
+            will be passed the key associated with the value, and this will be
+            bound to the value
+
+            For example, this would serialize Dates as ISO strings.
+
+                Date.prototype.toJSON = function (key) {
+                    function f(n) {
+                        // Format integers to have at least two digits.
+                        return n < 10 ? '0' + n : n;
+                    }
+
+                    return this.getUTCFullYear()   + '-' +
+                         f(this.getUTCMonth() + 1) + '-' +
+                         f(this.getUTCDate())      + 'T' +
+                         f(this.getUTCHours())     + ':' +
+                         f(this.getUTCMinutes())   + ':' +
+                         f(this.getUTCSeconds())   + 'Z';
+                };
+
+            You can provide an optional replacer method. It will be passed the
+            key and value of each member, with this bound to the containing
+            object. The value that is returned from your method will be
+            serialized. If your method returns undefined, then the member will
+            be excluded from the serialization.
+
+            If the replacer parameter is an array of strings, then it will be
+            used to select the members to be serialized. It filters the results
+            such that only members with keys listed in the replacer array are
+            stringified.
+
+            Values that do not have JSON representations, such as undefined or
+            functions, will not be serialized. Such values in objects will be
+            dropped; in arrays they will be replaced with null. You can use
+            a replacer function to replace those with JSON values.
+            JSON.stringify(undefined) returns undefined.
+
+            The optional space parameter produces a stringification of the
+            value that is filled with line breaks and indentation to make it
+            easier to read.
+
+            If the space parameter is a non-empty string, then that string will
+            be used for indentation. If the space parameter is a number, then
+            the indentation will be that many spaces.
+
+            Example:
+
+            text = JSON.stringify(['e', {pluribus: 'unum'}]);
+            // text is '["e",{"pluribus":"unum"}]'
+
+
+            text = JSON.stringify(['e', {pluribus: 'unum'}], null, '\t');
+            // text is '[\n\t"e",\n\t{\n\t\t"pluribus": "unum"\n\t}\n]'
+
+            text = JSON.stringify([new Date()], function (key, value) {
+                return this[key] instanceof Date ?
+                    'Date(' + this[key] + ')' : value;
+            });
+            // text is '["Date(---current time---)"]'
+
+
+        JSON.parse(text, reviver)
+            This method parses a JSON text to produce an object or array.
+            It can throw a SyntaxError exception.
+
+            The optional reviver parameter is a function that can filter and
+            transform the results. It receives each of the keys and values,
+            and its return value is used instead of the original value.
+            If it returns what it received, then the structure is not modified.
+            If it returns undefined then the member is deleted.
+
+            Example:
+
+            // Parse the text. Values that look like ISO date strings will
+            // be converted to Date objects.
+
+            myData = JSON.parse(text, function (key, value) {
+                var a;
+                if (typeof value === 'string') {
+                    a =
+/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z$/.exec(value);
+                    if (a) {
+                        return new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4],
+                            +a[5], +a[6]));
+                    }
+                }
+                return value;
+            });
+
+            myData = JSON.parse('["Date(09/09/2001)"]', function (key, value) {
+                var d;
+                if (typeof value === 'string' &&
+                        value.slice(0, 5) === 'Date(' &&
+                        value.slice(-1) === ')') {
+                    d = new Date(value.slice(5, -1));
+                    if (d) {
+                        return d;
+                    }
+                }
+                return value;
+            });
+
+
+    This is a reference implementation. You are free to copy, modify, or
+    redistribute.
+*/
+
+/*jslint evil: true, regexp: true */
+
+/*members "", "\b", "\t", "\n", "\f", "\r", "\"", JSON, "\\", apply,
+    call, charCodeAt, getUTCDate, getUTCFullYear, getUTCHours,
+    getUTCMinutes, getUTCMonth, getUTCSeconds, hasOwnProperty, join,
+    lastIndex, length, parse, prototype, push, replace, slice, stringify,
+    test, toJSON, toString, valueOf
+*/
+
+
+// Create a JSON object only if one does not already exist. We create the
+// methods in a closure to avoid creating global variables.
+
+var JSON;
+if (!JSON) {
+    JSON = {};
+}
+
+(function () {
+    'use strict';
+
+    function f(n) {
+        // Format integers to have at least two digits.
+        return n < 10 ? '0' + n : n;
+    }
+
+    if (typeof Date.prototype.toJSON !== 'function') {
+
+        Date.prototype.toJSON = function (key) {
+
+            return isFinite(this.valueOf())
+                ? this.getUTCFullYear()     + '-' +
+                    f(this.getUTCMonth() + 1) + '-' +
+                    f(this.getUTCDate())      + 'T' +
+                    f(this.getUTCHours())     + ':' +
+                    f(this.getUTCMinutes())   + ':' +
+                    f(this.getUTCSeconds())   + 'Z'
+                : null;
+        };
+
+        String.prototype.toJSON      =
+            Number.prototype.toJSON  =
+            Boolean.prototype.toJSON = function (key) {
+                return this.valueOf();
+            };
+    }
+
+    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
+        gap,
+        indent,
+        meta = {    // table of character substitutions
+            '\b': '\\b',
+            '\t': '\\t',
+            '\n': '\\n',
+            '\f': '\\f',
+            '\r': '\\r',
+            '"' : '\\"',
+            '\\': '\\\\'
+        },
+        rep;
+
+
+    function quote(string) {
+
+// If the string contains no control characters, no quote characters, and no
+// backslash characters, then we can safely slap some quotes around it.
+// Otherwise we must also replace the offending characters with safe escape
+// sequences.
+
+        escapable.lastIndex = 0;
+        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+            var c = meta[a];
+            return typeof c === 'string'
+                ? c
+                : '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+        }) + '"' : '"' + string + '"';
+    }
+
+
+    function str(key, holder) {
+
+// Produce a string from holder[key].
+
+        var i,          // The loop counter.
+            k,          // The member key.
+            v,          // The member value.
+            length,
+            mind = gap,
+            partial,
+            value = holder[key];
+
+// If the value has a toJSON method, call it to obtain a replacement value.
+
+        if (value && typeof value === 'object' &&
+                typeof value.toJSON === 'function') {
+            value = value.toJSON(key);
+        }
+
+// If we were called with a replacer function, then call the replacer to
+// obtain a replacement value.
+
+        if (typeof rep === 'function') {
+            value = rep.call(holder, key, value);
+        }
+
+// What happens next depends on the value's type.
+
+        switch (typeof value) {
+        case 'string':
+            return quote(value);
+
+        case 'number':
+
+// JSON numbers must be finite. Encode non-finite numbers as null.
+
+            return isFinite(value) ? String(value) : 'null';
+
+        case 'boolean':
+        case 'null':
+
+// If the value is a boolean or null, convert it to a string. Note:
+// typeof null does not produce 'null'. The case is included here in
+// the remote chance that this gets fixed someday.
+
+            return String(value);
+
+// If the type is 'object', we might be dealing with an object or an array or
+// null.
+
+        case 'object':
+
+// Due to a specification blunder in ECMAScript, typeof null is 'object',
+// so watch out for that case.
+
+            if (!value) {
+                return 'null';
+            }
+
+// Make an array to hold the partial results of stringifying this object value.
+
+            gap += indent;
+            partial = [];
+
+// Is the value an array?
+
+            if (Object.prototype.toString.apply(value) === '[object Array]') {
+
+// The value is an array. Stringify every element. Use null as a placeholder
+// for non-JSON values.
+
+                length = value.length;
+                for (i = 0; i < length; i += 1) {
+                    partial[i] = str(i, value) || 'null';
+                }
+
+// Join all of the elements together, separated with commas, and wrap them in
+// brackets.
+
+                v = partial.length === 0
+                    ? '[]'
+                    : gap
+                    ? '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']'
+                    : '[' + partial.join(',') + ']';
+                gap = mind;
+                return v;
+            }
+
+// If the replacer is an array, use it to select the members to be stringified.
+
+            if (rep && typeof rep === 'object') {
+                length = rep.length;
+                for (i = 0; i < length; i += 1) {
+                    if (typeof rep[i] === 'string') {
+                        k = rep[i];
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            } else {
+
+// Otherwise, iterate through all of the keys in the object.
+
+                for (k in value) {
+                    if (Object.prototype.hasOwnProperty.call(value, k)) {
+                        v = str(k, value);
+                        if (v) {
+                            partial.push(quote(k) + (gap ? ': ' : ':') + v);
+                        }
+                    }
+                }
+            }
+
+// Join all of the member texts together, separated with commas,
+// and wrap them in braces.
+
+            v = partial.length === 0
+                ? '{}'
+                : gap
+                ? '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}'
+                : '{' + partial.join(',') + '}';
+            gap = mind;
+            return v;
+        }
+    }
+
+// If the JSON object does not yet have a stringify method, give it one.
+
+    if (typeof JSON.stringify !== 'function') {
+        JSON.stringify = function (value, replacer, space) {
+
+// The stringify method takes a value and an optional replacer, and an optional
+// space parameter, and returns a JSON text. The replacer can be a function
+// that can replace values, or an array of strings that will select the keys.
+// A default replacer method can be provided. Use of the space parameter can
+// produce text that is more easily readable.
+
+            var i;
+            gap = '';
+            indent = '';
+
+// If the space parameter is a number, make an indent string containing that
+// many spaces.
+
+            if (typeof space === 'number') {
+                for (i = 0; i < space; i += 1) {
+                    indent += ' ';
+                }
+
+// If the space parameter is a string, it will be used as the indent string.
+
+            } else if (typeof space === 'string') {
+                indent = space;
+            }
+
+// If there is a replacer, it must be a function or an array.
+// Otherwise, throw an error.
+
+            rep = replacer;
+            if (replacer && typeof replacer !== 'function' &&
+                    (typeof replacer !== 'object' ||
+                    typeof replacer.length !== 'number')) {
+                throw new Error('JSON.stringify');
+            }
+
+// Make a fake root object containing our value under the key of ''.
+// Return the result of stringifying the value.
+
+            return str('', {'': value});
+        };
+    }
+
+
+// If the JSON object does not yet have a parse method, give it one.
+
+    if (typeof JSON.parse !== 'function') {
+        JSON.parse = function (text, reviver) {
+
+// The parse method takes a text and an optional reviver function, and returns
+// a JavaScript value if the text is a valid JSON text.
+
+            var j;
+
+            function walk(holder, key) {
+
+// The walk method is used to recursively walk the resulting structure so
+// that modifications can be made.
+
+                var k, v, value = holder[key];
+                if (value && typeof value === 'object') {
+                    for (k in value) {
+                        if (Object.prototype.hasOwnProperty.call(value, k)) {
+                            v = walk(value, k);
+                            if (v !== undefined) {
+                                value[k] = v;
+                            } else {
+                                delete value[k];
+                            }
+                        }
+                    }
+                }
+                return reviver.call(holder, key, value);
+            }
+
+
+// Parsing happens in four stages. In the first stage, we replace certain
+// Unicode characters with escape sequences. JavaScript handles many characters
+// incorrectly, either silently deleting them, or treating them as line endings.
+
+            text = String(text);
+            cx.lastIndex = 0;
+            if (cx.test(text)) {
+                text = text.replace(cx, function (a) {
+                    return '\\u' +
+                        ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+                });
+            }
+
+// In the second stage, we run the text against regular expressions that look
+// for non-JSON patterns. We are especially concerned with '()' and 'new'
+// because they can cause invocation, and '=' because it can cause mutation.
+// But just to be safe, we want to reject all unexpected forms.
+
+// We split the second stage into 4 regexp operations in order to work around
+// crippling inefficiencies in IE's and Safari's regexp engines. First we
+// replace the JSON backslash pairs with '@' (a non-JSON character). Second, we
+// replace all simple value tokens with ']' characters. Third, we delete all
+// open brackets that follow a colon or comma or that begin the text. Finally,
+// we look to see that the remaining characters are only whitespace or ']' or
+// ',' or ':' or '{' or '}'. If that is so, then the text is safe for eval.
+
+            if (/^[\],:{}\s]*$/
+                    .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
+                        .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+                        .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+
+// In the third stage we use the eval function to compile the text into a
+// JavaScript structure. The '{' operator is subject to a syntactic ambiguity
+// in JavaScript: it can begin a block or an object literal. We wrap the text
+// in parens to eliminate the ambiguity.
+
+                j = eval('(' + text + ')');
+
+// In the optional fourth stage, we recursively walk the new structure, passing
+// each name/value pair to a reviver function for possible transformation.
+
+                return typeof reviver === 'function'
+                    ? walk({'': j}, '')
+                    : j;
+            }
+
+// If the text is not JSON parseable, then a SyntaxError is thrown.
+
+            throw new SyntaxError('JSON.parse');
+        };
+    }
+}());
+
+(function(root) {
+  root.$fh = root.$fh || {};
+  var $fh = root.$fh;
+  $fh.fh_timeout = 20000;
+  $fh.boxprefix = '/box/srv/1.1/';
+
+  var _is_initializing = false;
+  var _cloud_ready_listeners = [];
+
+  var _cloudReady = function(success){
+    try{
+      while(_cloud_ready_listeners[0]){
+        var act_fun = _cloud_ready_listeners.shift();
+        if(act_fun.type === "init"){
+          success? act_fun.success($fh.cloud_props):(act_fun.fail?act_fun.fail("fh_init_failed"): function(){});
+        }
+        if(act_fun.type === "act"){
+          success?$fh.act(act_fun.opts, act_fun.success, act_fun.fail):(act_fun.fail?act_fun.fail("fh_init_failed"):function(){});
+        }
       }
-    });
+    } finally {
 
+    };
+  }
+
+  //cookie read/write only used internally, make it private
+  var _mock_uuid_cookie_name = "mock_uuid";
+  var __readCookieValue  = function (cookie_name) {
+    var name_str = cookie_name + "=";
+    var cookies = document.cookie.split(";");
+    for (var i = 0; i < cookies.length; i++) {
+      var c = cookies[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1, c.length);
+      }
+      if (c.indexOf(name_str) == 0) {
+        return c.substring(name_str.length, c.length);
+      }
+    }
+    return null;
+  };
+  var __createUUID = function () {
+    //from http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+    //based on RFC 4122, section 4.4 (Algorithms for creating UUID from truely random pr pseudo-random number)
+    var s = [];
+    var hexDigitals = "0123456789ABCDEF";
+    for (var i = 0; i < 32; i++) {
+      s[i] = hexDigitals.substr(Math.floor(Math.random() * 0x10), 1);
+    }
+    s[12] = "4";
+    s[16] = hexDigitals.substr((s[16] & 0x3) | 0x8, 1);
+    var uuid = s.join("");
+    return uuid;
+  };
+  var __createCookie = function (cookie_name, cookie_value) {
+    var date = new Date();
+    date.setTime(date.getTime() + 36500 * 24 * 60 * 60 * 1000); //100 years
+    var expires = "; expires=" + date.toGMTString();
+    document.cookie = cookie_name + "=" + cookie_value + expires + "; path = /";
   };
 
-  $fh.act = function(opts, cb) {
-    if (null == cloudProps) {
-      return cb({
-        "message": "Must call init first"
-      });
+  var getDeviceId = function(){
+    //check for cordova/phonegap first
+    if(typeof navigator.device !== "undefined" && typeof navigator.device.uuid !== "undefined"){
+        return navigator.device.uuid;
+    } else {
+        var uuid = __readCookieValue(_mock_uuid_cookie_name);
+        if(null == uuid){
+            uuid = __createUUID();
+            __createCookie(_mock_uuid_cookie_name, uuid);
+        }
+        return uuid;
     }
-
-    if (!opts.endpoint) {
-      return cb('act_no_endpoint');
-    }
-    if (!opts.guid) {
-      return cb('act_no_guid');
-    }
-
-    //ToDo Should be selectable by mode
-    var url = cloudProps.hosts.releaseCloudUrl + "/cloud/" + opts.endpoint;
-    var params = opts.params || {};
-
-    return $fh.__ajax({
-      "url": url,
-      "method": "POST",
-      "data": JSON.stringify(opts),
-      success: function(res) {
-        cb(null, res);
-      },
-      error: function(req, statusText, error) {
-        cb({
-          "req": req,
-          "statusText": statusText,
-          "message": error
-        });
-      }
-    });
-  };
-
-  $fh._current_auth_user = null;
-
-  $fh.auth = function (opts, cb) {
-    var req = {};
-    var secure = true;
-    if ('secure' in opts) {
-      secure = opts.secure;
-    }
-    if (!opts.policyId) {
-      return f('auth_no_policyId');
-    }
-    if (!opts.clientToken) {
-      return f('auth_no_clientToken');
-    }
-    req.policyId = opts.policyId;
-    req.clientToken = opts.clientToken;
-    req.params = {};
-    if (opts.params) {
-      req.params = opts.params;
-    }
-    var endurl = req.params.endurl || "status=complete";
-    $fh._current_auth_user = req;
-
-    var udid = $fh.__readCookieValue($fh._mock_uuid_cookie_name);
-
-    var path = $fh.boxprefix + "admin/authpolicy/auth";
-    //ToDO Fix me
-    var url = options.apiurl + path + "?policyId=" + opts.policyId + "&clientToken=" + opts.clientToken + "&device=" + udid + "&params={}";
-
-    var params = opts.params || {};
-
-    return $fh.__ajax({
-      "url": url,
-      "method": "POST",
-      "data": JSON.stringify(params),
-      success: function(res) {
-        cb(null, res);
-      },
-      error: function(req, statusText, error) {
-        cb({
-          "req": req,
-          "statusText": statusText,
-          "message": error
-        });
-      }
-    });
-
-
-//    $fh.env({}, function (props) {
-//      req.device = props.uuid;
-//      $fh.call('admin/authpolicy/auth', req, function (res) {
-
-//        if (res.status && res.status === "ok") {
-//          if (res.url) {
-//            document.addEventListener("webviewUrlChange", function(e) {
-//              var url = e.data;
-//              if (url.indexOf(endurl) > -1) {
-//                $fh.webview({'act':'close'});
-//                var i = url.split("?");
-//                if (i.length == 2) {
-//                  var queryString = i[1];
-//                  var pairs = queryString.split("&");
-//                  var qmap = {};
-//                  for (var p = 0; p < pairs.length; p++) {
-//                    var q = pairs[p];
-//                    var qp = q.split("=");
-//                    qmap[qp[0]] = qp[1];
-//                  }
-//                  if (qmap['result'] && qmap['result'] === 'success') {
-//                    var sucRes = {'sessionToken': qmap['fh_auth_session'], 'authResponse' : JSON.parse(decodeURIComponent(qmap['authResponse']))};
-//                    s(sucRes);
-//                  } else {
-//                    f({'message':qmap['message']});
-//                  }
-//                } else {
-//                  f({'message':'unknown_error'});
-//                }
-//              }
-//            });
-//            $fh.webview({act:'open', url:res.url});
-//          } else {
-//            return s(res);
-//          }
-//        } else {
-//          return f(res)
-//        }
-
-//      }, null, secure, function (msg, e) {
-//        f({'message':msg});
-//      });
-//    },null)
-
-  };
+  }
 
   function isSameOrigin(url) {
     var loc = window.location;
@@ -192,7 +575,7 @@ $fh = {
             || (locParts[1] === urlParts[1] && // protocol matches }
             locParts[3] === urlParts[3] && // domain matches   }-> absolute url
             locParts[4] === urlParts[4]); // port matches      }
-  }
+  };
 
 
   // ** millicore/src/main/webapp/box/static/apps/libs/feedhenry/feedhenry-core.js **
@@ -232,13 +615,21 @@ $fh = {
     head.insertBefore(script, head.firstChild);
   };
 
+  var defaultFail = function(err){
+    if(console){
+      console.log(err);
+    }
+  }
 
   $fh.__ajax = function (options) {
-    if (!isSameOrigin(options.url)) {
-      options.dataType = 'jsonp';
+    var o = options ? options : {};
+    //only use jsonp if it's not in the same origin and Phonegap/cordova doesn't exist
+    if (!isSameOrigin(options.url) && typeof window.PhoneGap === "undefined" && typeof window.cordova === "undefined") {
+      o.dataType = 'jsonp';
+    } else {
+      o.dataType = "json";
     }
 
-    var o = options ? options : {};
     var req;
     var url = o.url;
     var method = o.type || 'GET';
@@ -340,6 +731,14 @@ $fh = {
           }
         };
         url += (rurl.test(url) ? "&" : "?") + "_callback=" + callbackId;
+        if(o.data){
+          var d = o.data;
+          if(typeof d === "string"){
+            url += "&_jsonpdata=" + encodeURIComponent(o.data);
+          } else {
+            url += "&_jsonpdata=" + encodeURIComponent(JSON.stringify(o.data));
+          }
+        }
         __load_script(url);
       }
     };
@@ -356,248 +755,200 @@ $fh = {
     types[datatype]();
   };
 
-  // As we're not on-device, we can't talk to anything other than FeedHenry for our cloud needs (x domain issue),
-  // so params structure don't change
-  $fh._getCloudParams = function (params) {
-    return params;
-  };
-
-  $fh._addRequestParams = function (params, callback) {
-
-    $fh.env({}, function (props) {
-      var fhParams = {};
-//      fhParams.cuid = props.uuid;
-//      fhParams.destination = props.destination;
-//      fhParams.domain = props.domain;
-//      fhParams.version = props.version;
-
-      params = params || {};
-//      params.__fh = fhParams;
-//      params = $fh._getCloudParams(params);
-
-      callback(params);
-    });
-  };
-
-  $fh._getRequestUrl = function (host, path, secure) {
-    if(!host) {
-      return $fh.boxprefix + path;
-    } else {
-      return host + $fh.boxprefix + path;
-    }
-  };
-
-  //These were $fh.legacy.*
-  $fh.fh_timeout = 20000;
-  $fh.boxprefix = '/box/srv/1.1/';
-
-  $fh.call = function (path, params, success, xhr, secure, error) {
-    try {
-
-      $fh._addRequestParams(params, function (req) {
-        var to = $fh.fh_timeout;
-        if (typeof req.timeout != "undefined") {
-          to = req.timeout;
-          req.timeout = undefined;
-        }
-        var reqstring = JSON.stringify(req);
-
-        alert(reqstring);
-
-        // Check if the path needs to be converted to a request url, otherwise use it as is
-        var url = path;
-        if (path.indexOf('http') < 0) {
-          url = $fh._getRequestUrl(params.host, path, secure);
-        }
-
-        var ajaxParams = {
-          type: "POST",
-          url: url,
-          dataType: 'jsonp',
-          contentType: 'application/json',
-          cache: false,
-          data: reqstring,
-          timeout: to,
-          success: function (res) {
-            if (success) {
-              success(res);
+  $fh._handleAuthResponse = function(endurl, res, success, fail){
+    if(res.status && res.status === "ok"){
+      if(res.url){
+        if(window.PhoneGap || window.cordova){
+          if(window.plugins && window.plugins.childBrowser){
+            //found childbrowser plugin,add the event listener and load it
+            if(typeof window.plugins.childBrowser.showWebPage === "function"){
+              window.plugins.childBrowser.onLocationChange = function(new_url){
+                if(new_url.indexOf(endurl) > -1){
+                  window.plugins.childBrowser.close();
+                  var i = new_url.split("?");
+                  if(i.length == 2){
+                    var queryString = i[1];
+                    var pairs = queryString.split("&");
+                    var qmap ={};
+                    for(var p=0;p<pairs.length;p++){
+                      var q = pairs[p];
+                      var qp = q.split("=");
+                      qmap[qp[0]] = qp[1];
+                    };
+                    if(qmap['result'] && qmap['result'] === 'success'){
+                      var sucRes = {'sessionToken': qmap['fh_auth_session'], 'authResponse' : JSON.parse(decodeURIComponent(decodeURIComponent(qmap['authResponse'])))};
+                      success(sucRes);
+                    } else {
+                      if(fail){
+                        fail({'message':qmap['message']});
+                      }
+                    }
+                  } else {
+                    if(fail){
+                        fail({'message':qmap['message']});
+                    }
+                  }
+                }
+              }
+              window.plugins.childBrowser.showWebPage(res.url);
             }
-          },
-          error: function (xhr, msg, err) {
-            alert("error");
-//            $fh.legacy.error(xhr, msg, err, error);
-          }
-        };
-
-        //ajaxParams.xhr = $fh.xhr;
-        $fh.__ajax(ajaxParams);
-      });
-
-    } catch (e) {
-      console.log(e);
-      var url = $fh.legacy.hostname + $fh.legacy.pathprefix + path; //TODO Is $fh.legacy.hostname correct here?
-      try {
-        // Facebook javascript api
-        var ajax = new Ajax();
-        ajax.responseType = Ajax.JSON;
-        ajax.ondone = function (res) {
-          // console.log(JSON.stringify(res));
-          if (success) {
+          } else {
+            console.log("ChildBrowser plugin is not intalled.");
             success(res);
           }
-        };
-        var reqtext = JSON.stringify(req);
-        var data = {
-          'fh_fb_data': reqtext
-        };
-        // ajax.onerror = $fh.error;
-        ajax.post(url, data);
-      } catch (ex) {
-
+        } else {
+         document.location.href = res.url;  
+        }
+      } else {
+        success(res);
       }
-    }
-  };
-
-  // ** millicore/src/main/webapp/box/static/apps/libs/feedhenry/feedhenry-core.js **
-
-  // ** millicore/src/main/webapp/box/static/apps/libs/feedhenry/feedhenry-api.js **
-
-  var defaultargs = {
-    success: function () {
-    },
-    failure: function () {
-    },
-    params: {}
-  };
-
-  var handleargs = function (inargs, defaultparams, applyto) {
-    var outargs = [null, null, null];
-    var origargs = [null, null, null];
-    var numargs = inargs.length;
-
-    if (2 < numargs) {
-      origargs[0] = inargs[numargs - 3];
-      origargs[1] = inargs[numargs - 2];
-      origargs[2] = inargs[numargs - 1];
-    } else if (2 == numargs) {
-      origargs[1] = inargs[0];
-      origargs[2] = inargs[1];
-    } else if (1 == numargs) {
-      origargs[2] = inargs[0];
-    }
-
-    var i = 0,
-            j = 0;
-    for (; i < 3; i++) {
-      var a = origargs[i];
-      var ta = typeof a;
-      //console.log('iter i:'+i+' j:'+j+' ta:'+ta);
-      if (a && 0 == j && ('object' == ta || 'boolean' == ta)) {
-        //console.log('object i:'+i+' j:'+j+' ta:'+ta);
-        outargs[j++] = a;
-      } else if (a && 'function' == ta) {
-        j = 0 == j ? 1 : j;
-        //console.log('function i:'+i+' j:'+j+' ta:'+ta);
-        outargs[j++] = a;
-      }
-    }
-
-    if (null == outargs[0]) {
-      outargs[0] = defaultparams ? defaultparams : defaultargs.params;
     } else {
-      var paramsarg = outargs[0];
-      paramsarg._defaults = [];
-      for (var n in defaultparams) {
-        if (defaultparams.hasOwnProperty(n)) {
-          if (typeof paramsarg[n] === "undefined") {  //we don't want to use !paramsarg[n] here because the parameter could exists in the argument and it could be false
-            paramsarg[n] = defaultparams[n];
-            paramsarg._defaults.push(n);
-          }
-        }
+      if(fail){
+        fail(res);
       }
     }
-
-    outargs[1] = null == outargs[1] ? defaultargs.success : outargs[1];
-    outargs[2] = null == outargs[2] ? defaultargs.failure : outargs[2];
-
-    applyto(outargs[0], outargs[1], outargs[2]);
   };
 
+  $fh.init = function(opts, success, fail) {
+    if($fh.cloud_props){
+      return success($fh.cloud_props);
+    } 
+    if(!_is_initializing){
+      _is_initializing = true;
+      if(!fail){
+        fail = defaultFail;
+      }
+      if (!opts.host) {
+        return fail('init_no_apiurl');
+      }
+      if (!opts.appid) {
+        return fail('init_no_appId');
+      }
+      if (!opts.appkey) {
+        return fail('init_no_appKey');
+      }
+      $fh.app_props = opts;
+      var path = opts.host + $fh.boxprefix + "app/init";
+      var data = {"appKey": opts.appkey, "appId": opts.appid, "deviceID": getDeviceId()};
+      $fh.__ajax({
+        "url": path,
+        "type": "POST",
+        "contentType": "application/json",
+        "data": JSON.stringify(data),
+        "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
+        "success": function(res){
+          $fh.cloud_props = res;
+          if(success){
+            success(res);
+          }; 
+          _cloudReady(true);
+        },
+        "error": function(req, statusText, error){
+          if(fail){
+            fail(error);
+          };
+          _cloudReady(false);
+        }
+      });
+    } else {
+      _cloud_ready_listeners.push({type:'init', success: success, fail: fail});
+    }
+    
+  };
 
-  $fh.env = function () {
-    handleargs(arguments, {}, function (p, s, f) {
-      // flat property set - no sub objects!
-      __env({}, function (destEnv) {
-//        destEnv.domain = $fh.legacy.domain;
-//        destEnv.application = $fh.legacy.widget.guid;
-//        destEnv.template = null; // template instance
-//        destEnv.instance = $fh.legacy.instance;
-//        destEnv.install = null; // tbd
-//        destEnv.version = $fh.legacy.widget.version;
-//        destEnv.destination = $fh.legacy.destinationName;
-//        destEnv.subscriber = $fh.legacy.user.id;
-//        destEnv.agent = navigator.userAgent || 'unknown';
-        s(destEnv);
-      }, null);
+  $fh.act = function(opts, success, fail) {
+    if(!fail){
+      fail = defaultFail;
+    }
+    if (null == $fh.cloud_props && _is_initializing){
+      _cloud_ready_listeners.push({
+        "type": "act",
+        "opts": opts,
+        "success": success,
+        "fail": fail
+      });
+      return;
+    }
+
+    if (!opts.act) {
+      return fail('act_no_action');
+    }
+    
+    var cloud_host = $fh.cloud_props.hosts.debugCloudUrl;
+    var app_type = $fh.cloud_props.hosts.debugCloudType;
+    
+    if($fh.app_props.mode && $fh.app_props.mode.indexOf("prod") > -1){
+      cloud_host = $fh.cloud_props.hosts.releaseCloudUrl;
+      app_type = $fh.cloud_props.hosts.releaseCloudType;
+    }
+    var url = cloud_host + "/cloud/" + opts.act;
+    if(app_type === "fh"){
+      url = cloud_host + $fh.boxprefix + "act/" + $fh.cloud_props.domain + "/"+ $fh.app_props.appid + "/" + opts.act + "/" + $fh.app_props.appid;
+    }
+    var params = opts.req || {};
+
+    return $fh.__ajax({
+      "url": url,
+      "type": "POST",
+      "data": JSON.stringify(params),
+      "contentType": "application/json",
+      "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
+      success: function(res) {
+        if(success){
+          return success(res);
+        }
+      },
+      error: function(req, statusText, error) {
+        if(fail){
+          return fail(error);
+        }
+      }
     });
   };
 
-  //renamed from $fh.__dest__.env
-  function __env(p, s, f) {
-    s({
-      height: window.innerHeight,
-      width: window.innerWidth,
-      uuid: function () {
-        var uuid = $fh.__readCookieValue($fh._mock_uuid_cookie_name);
-        if (null == uuid) {
-          uuid = $fh.__createUUID();
-          $fh.__createCookie($fh._mock_uuid_cookie_name, uuid);
+  $fh.auth = function (opts, success, fail) {
+    if(!fail){
+      fail = defaultFail;
+    }
+    if (null == $fh.cloud_props) {
+      return fail('fh_not_ready');
+    }
+    var req = {};
+    if (!opts.policyId) {
+      return fail('auth_no_policyId');
+    }
+    if (!opts.clientToken) {
+      return fail('auth_no_clientToken');
+    }
+    req.policyId = opts.policyId;
+    req.clientToken = opts.clientToken;
+    if(opts.endRedirectUrl){
+      req.endRedirectUrl = opts.endRedirectUrl;
+    }
+    req.params = {};
+    if (opts.params) {
+      req.params = opts.params;
+    }
+    var endurl = opts.endRedirectUrl || "status=complete";
+    var deviceId = getDeviceId();
+    req.device = deviceId;
+    var path = $fh.app_props.host + $fh.boxprefix + "admin/authpolicy/auth";
+
+    $fh.__ajax({
+      "url": path,
+      "type": "POST",
+      "data": JSON.stringify(req),
+      "contentType": "application/json",
+      "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
+      success: function(res) {
+        $fh._handleAuthResponse(endurl, res, success, fail);
+      },
+      error: function(req, statusText, error) {
+        if(fail){
+          fail(error);
         }
-        return uuid;
-      }()
+      }
     });
-  }
 
-  $fh.__readCookieValue = function (cookie_name) {
-    var name_str = cookie_name + "=";
-    var cookies = document.cookie.split(";");
-    for (var i = 0; i < cookies.length; i++) {
-      var c = cookies[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1, c.length);
-      }
-      if (c.indexOf(name_str) == 0) {
-        return c.substring(name_str.length, c.length);
-      }
-    }
-    return null;
   };
-
-  $fh.__createCookie = function (cookie_name, cookie_value) {
-    var date = new Date();
-    date.setTime(date.getTime() + 36500 * 24 * 60 * 60 * 1000); //100 years
-    var expires = "; expires=" + date.toGMTString();
-    document.cookie = cookie_name + "=" + cookie_value + expires + "; path = /";
-  };
-
-  $fh.__createUUID = function () {
-    //from http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-    //based on RFC 4122, section 4.4 (Algorithms for creating UUID from truely random pr pseudo-random number)
-    var s = [];
-    var hexDigitals = "0123456789ABCDEF";
-    for (var i = 0; i < 32; i++) {
-      s[i] = hexDigitals.substr(Math.floor(Math.random() * 0x10), 1);
-    }
-    s[12] = "4";
-    s[16] = hexDigitals.substr((s[16] & 0x3) | 0x8, 1);
-    var uuid = s.join("");
-    return uuid;
-  };
-
-  $fh._mock_uuid_cookie_name = "mock_uuid";
-  $fh._current_auth_user = null;
-
-  // ** millicore/src/main/webapp/box/static/apps/libs/feedhenry/feedhenry-api.js **
-
-  return $fh;
-})();
+})(this);
