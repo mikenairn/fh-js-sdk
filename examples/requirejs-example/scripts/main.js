@@ -1,6 +1,6 @@
 require(["scripts/feedhenry.js"], function(fh) {
   var config = {
-    host:"https://engtest.every.henora.net",
+    host:"http://engtest.every.henora.net",
     appid: "FRSxYsC1o5kke8USg1EXBQ25",
     appkey: "a29ff8af58715e9c7e3d5c84d2e6d368db8cf21b",
     mode: "debug"
@@ -39,8 +39,13 @@ require(["scripts/feedhenry.js"], function(fh) {
 
   document.getElementById('run_auth_button').onclick = function() {
     var options = {
-      policyId: "FeedHenry",
-      clientToken: "EF_ERidviTlOPiGrt6pCOr6b"
+      policyId: "test3",
+      clientToken: "FRSxYsC1o5kke8USg1EXBQ25",
+      endRedirectUrl: window.location.href,
+      authCallback: "authLoggin",
+      params: {
+       
+      }
     };
     $fh.auth(options,
             function(res) {
@@ -51,3 +56,7 @@ require(["scripts/feedhenry.js"], function(fh) {
   };
 
 });
+
+function authLoggin(res){
+  
+}

@@ -622,12 +622,14 @@ if (!JSON) {
   }
 
   $fh.__ajax = function (options) {
+    var o = options ? options : {};
     //only use jsonp if it's not in the same origin and Phonegap/cordova doesn't exist
     if (!isSameOrigin(options.url) && typeof window.PhoneGap === "undefined" && typeof window.cordova === "undefined") {
-      options.dataType = 'jsonp';
+      o.dataType = 'jsonp';
+    } else {
+      o.dataType = "json";
     }
 
-    var o = options ? options : {};
     var req;
     var url = o.url;
     var method = o.type || 'GET';
@@ -753,6 +755,59 @@ if (!JSON) {
     types[datatype]();
   };
 
+  $fh._handleAuthResponse = function(endurl, res, success, fail){
+    if(res.status && res.status === "ok"){
+      if(res.url){
+        if(window.PhoneGap || window.cordova){
+          if(window.plugins && window.plugins.childBrowser){
+            //found childbrowser plugin,add the event listener and load it
+            if(typeof window.plugins.childBrowser.showWebPage === "function"){
+              window.plugins.childBrowser.onLocationChange = function(new_url){
+                if(new_url.indexOf(endurl) > -1){
+                  window.plugins.childBrowser.close();
+                  var i = new_url.split("?");
+                  if(i.length == 2){
+                    var queryString = i[1];
+                    var pairs = queryString.split("&");
+                    var qmap ={};
+                    for(var p=0;p<pairs.length;p++){
+                      var q = pairs[p];
+                      var qp = q.split("=");
+                      qmap[qp[0]] = qp[1];
+                    };
+                    if(qmap['result'] && qmap['result'] === 'success'){
+                      var sucRes = {'sessionToken': qmap['fh_auth_session'], 'authResponse' : JSON.parse(decodeURIComponent(decodeURIComponent(qmap['authResponse'])))};
+                      success(sucRes);
+                    } else {
+                      if(fail){
+                        fail({'message':qmap['message']});
+                      }
+                    }
+                  } else {
+                    if(fail){
+                        fail({'message':qmap['message']});
+                    }
+                  }
+                }
+              }
+              window.plugins.childBrowser.showWebPage(res.url);
+            }
+          } else {
+            console.log("ChildBrowser plugin is not intalled.");
+            success(res);
+          }
+        } else {
+         document.location.href = res.url;  
+        }
+      } else {
+        success(res);
+      }
+    } else {
+      if(fail){
+        fail(res);
+      }
+    }
+  };
 
   $fh.init = function(opts, success, fail) {
     if($fh.cloud_props){
@@ -777,7 +832,7 @@ if (!JSON) {
       var data = {"appKey": opts.appkey, "appId": opts.appid, "deviceID": getDeviceId()};
       $fh.__ajax({
         "url": path,
-        "method": "POST",
+        "type": "POST",
         "contentType": "application/json",
         "data": JSON.stringify(data),
         "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
@@ -818,9 +873,10 @@ if (!JSON) {
     if (!opts.act) {
       return fail('act_no_action');
     }
-
+    
     var cloud_host = $fh.cloud_props.hosts.debugCloudUrl;
     var app_type = $fh.cloud_props.hosts.debugCloudType;
+    
     if($fh.app_props.mode && $fh.app_props.mode.indexOf("prod") > -1){
       cloud_host = $fh.cloud_props.hosts.releaseCloudUrl;
       app_type = $fh.cloud_props.hosts.releaseCloudType;
@@ -833,7 +889,7 @@ if (!JSON) {
 
     return $fh.__ajax({
       "url": url,
-      "method": "POST",
+      "type": "POST",
       "data": JSON.stringify(params),
       "contentType": "application/json",
       "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
@@ -866,23 +922,26 @@ if (!JSON) {
     }
     req.policyId = opts.policyId;
     req.clientToken = opts.clientToken;
+    if(opts.endRedirectUrl){
+      req.endRedirectUrl = opts.endRedirectUrl;
+    }
     req.params = {};
     if (opts.params) {
       req.params = opts.params;
     }
-    var endurl = req.params.endurl || "status=complete";
+    var endurl = opts.endRedirectUrl || "status=complete";
     var deviceId = getDeviceId();
     req.device = deviceId;
     var path = $fh.app_props.host + $fh.boxprefix + "admin/authpolicy/auth";
 
     $fh.__ajax({
       "url": path,
-      "method": "POST",
+      "type": "POST",
       "data": JSON.stringify(req),
       "contentType": "application/json",
       "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
       success: function(res) {
-          //TODO: check if res contains a url, if it does, load it in the current window
+        $fh._handleAuthResponse(endurl, res, success, fail);
       },
       error: function(req, statusText, error) {
         if(fail){
