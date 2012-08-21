@@ -24,7 +24,7 @@ require(["scripts/feedhenry.js"], function(fh) {
 
   document.getElementById('run_action_button').onclick = function() {
     var options = {
-      endpoint: "getConfig",
+      act: "getConfig",
       params: {
         somekey: "someval"
       }

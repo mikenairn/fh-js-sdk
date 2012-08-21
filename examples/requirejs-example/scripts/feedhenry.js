@@ -820,10 +820,15 @@ if (!JSON) {
     }
 
     var cloud_host = $fh.cloud_props.hosts.debugCloudUrl;
+    var app_type = $fh.cloud_props.hosts.debugCloudType;
     if($fh.app_props.mode && $fh.app_props.mode.indexOf("prod") > -1){
       cloud_host = $fh.cloud_props.hosts.releaseCloudUrl;
+      app_type = $fh.cloud_props.hosts.releaseCloudType;
     }
     var url = cloud_host + "/cloud/" + opts.act;
+    if(app_type === "fh"){
+      url = cloud_host + $fh.boxprefix + "act/" + $fh.cloud_props.domain + "/"+ $fh.app_props.appid + "/" + opts.act + "/" + $fh.app_props.appid;
+    }
     var params = opts.req || {};
 
     return $fh.__ajax({
