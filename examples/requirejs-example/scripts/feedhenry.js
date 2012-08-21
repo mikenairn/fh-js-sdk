@@ -486,6 +486,37 @@ if (!JSON) {
     }
 }());
 
+function _checkAuthResponse() {
+  var url = window.location.href;
+  if (/\_fhAuthCallback/.test(url)) {
+    var i = url.split("?");
+    if (i.length == 2) {
+      var queryString = i[1];
+      var pairs = queryString.split("&");
+      var qmap = {};
+      for (var p = 0; p < pairs.length; p++) {
+        var q = pairs[p];
+        var qp = q.split("=");
+        qmap[qp[0]] = qp[1];
+      }
+      var callback = qmap["_fhAuthCallback"];
+      if (callback) {
+        if (qmap['result'] && qmap['result'] === 'success') {
+          var sucRes = {'sessionToken': qmap['fh_auth_session'], 'authResponse' : JSON.parse(decodeURIComponent(decodeURIComponent(qmap['authResponse'])))};
+          window[callback](null, sucRes);
+        } else {
+          window[callback]({'message':qmap['message']});
+        }
+      }
+    }
+  }
+}
+if (window.addEventListener) {
+  window.addEventListener('load', _checkAuthResponse, false); //W3C
+} else {
+  window.attachEvent('onload', _checkAuthResponse); //IE
+}
+
 (function(root) {
   root.$fh = root.$fh || {};
   var $fh = root.$fh;
@@ -774,7 +805,7 @@ if (!JSON) {
                       var q = pairs[p];
                       var qp = q.split("=");
                       qmap[qp[0]] = qp[1];
-                    };
+                    }
                     if(qmap['result'] && qmap['result'] === 'success'){
                       var sucRes = {'sessionToken': qmap['fh_auth_session'], 'authResponse' : JSON.parse(decodeURIComponent(decodeURIComponent(qmap['authResponse'])))};
                       success(sucRes);
@@ -789,7 +820,7 @@ if (!JSON) {
                     }
                   }
                 }
-              }
+              };
               window.plugins.childBrowser.showWebPage(res.url);
             }
           } else {
@@ -797,7 +828,7 @@ if (!JSON) {
             success(res);
           }
         } else {
-         document.location.href = res.url;  
+          document.location.href = res.url;
         }
       } else {
         success(res);
@@ -922,8 +953,11 @@ if (!JSON) {
     }
     req.policyId = opts.policyId;
     req.clientToken = opts.clientToken;
-    if(opts.endRedirectUrl){
+    if(opts.endRedirectUrl) {
       req.endRedirectUrl = opts.endRedirectUrl;
+      if(opts.authCallback) {
+        req.endRedirectUrl += (/\?/.test(req.endRedirectUrl) ? "&" : "?") + "_fhAuthCallback=" + opts.authCallback;
+      }
     }
     req.params = {};
     if (opts.params) {

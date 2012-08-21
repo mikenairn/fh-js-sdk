@@ -6,7 +6,6 @@ require(["scripts/feedhenry.js"], function() {
     mode: "debug"
   };
 
-  //fh_init();
   $fh.init(config, function(){}, function(){});
 
   document.getElementById('run_init_button').onclick = function() {
@@ -18,8 +17,8 @@ require(["scripts/feedhenry.js"], function() {
             function(res) {
               document.getElementById('initResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
             }, function(err){
-              alert(err);
-            });
+      alert(err);
+    });
   }
 
   document.getElementById('run_action_button').onclick = function() {
@@ -32,9 +31,22 @@ require(["scripts/feedhenry.js"], function() {
     $fh.act(options,
             function(res) {
               document.getElementById('actResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-            }, function(err){
-              alert(err);
-            });
+            }, function(err) {
+      alert(err);
+    });
+  };
+
+  document.getElementById('run_oauth_button').onclick = function() {
+    var options = {
+      policyId: "OAuth",
+      clientToken: "vH_oeCyq37FPMNVDJZo_pWW0",
+      endRedirectUrl: window.location.href,
+      authCallback: "authLoginCallback",
+      params: {
+        "endurl": window.location
+      }
+    };
+    $fh.auth(options, function(){}, function(){});
   };
 
   document.getElementById('run_auth_button').onclick = function() {
@@ -42,22 +54,26 @@ require(["scripts/feedhenry.js"], function() {
       policyId: "FeedHenry",
       clientToken: "vH_oeCyq37FPMNVDJZo_pWW0",
       endRedirectUrl: window.location.href,
-      authCallback: "authLoggin",
       params: {
         userId: "test1",
         password: "password"
       }
     };
+
     $fh.auth(options,
             function(res) {
               document.getElementById('authResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-            }, function(err){
-              alert(err);
-            });
+            }, function(err) {
+      alert(err);
+    });
   };
 
 });
 
-function authLoggin(res){
-  
+function authLoginCallback(err, res) {
+  if(!err) {
+    document.getElementById('authResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
+  } else {
+    alert(err.message);
+  }
 }
