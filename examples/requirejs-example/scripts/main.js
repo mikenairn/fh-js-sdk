@@ -1,8 +1,8 @@
-require(["scripts/feedhenry.js"], function(fh) {
+require(["scripts/feedhenry.js"], function() {
   var config = {
-    host:"https://engtest.every.henora.net",
-    appid: "FRSxYsC1o5kke8USg1EXBQ25",
-    appkey: "a29ff8af58715e9c7e3d5c84d2e6d368db8cf21b",
+    host:"https://testing.deacon.henora.net",
+    appid: "vH_oeCyq37FPMNVDJZo_pWW0",
+    appkey: "vH_oeCyq37FPMNVDJZo_pWW0",
     mode: "debug"
   };
 
@@ -17,15 +17,15 @@ require(["scripts/feedhenry.js"], function(fh) {
     $fh.init(config,
             function(res) {
               document.getElementById('initResponse').innerHTML = "<p>" + JSON.stringify(res) + "</p>";
-            }, function(){
-
+            }, function(err){
+              alert(err);
             });
   }
 
   document.getElementById('run_action_button').onclick = function() {
     var options = {
-      endpoint: "getConfig",
-      params: {
+      act: "getConfig",
+      req: {
         somekey: "someval"
       }
     };
@@ -40,10 +40,10 @@ require(["scripts/feedhenry.js"], function(fh) {
   document.getElementById('run_auth_button').onclick = function() {
     var options = {
       policyId: "FeedHenry",
-      clientToken: "EF_ERidviTlOPiGrt6pCOr6b",
+      clientToken: "vH_oeCyq37FPMNVDJZo_pWW0",
       params: {
-        userId: "m.nairn@gmail.com",
-        password: "noWires"
+        userId: "test1",
+        password: "password"
       }
     };
     $fh.auth(options,

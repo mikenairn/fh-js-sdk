@@ -508,8 +508,8 @@ if (!JSON) {
       }
     } finally {
 
-    };
-  }
+    }
+  };
 
   //cookie read/write only used internally, make it private
   var _mock_uuid_cookie_name = "mock_uuid";
@@ -547,7 +547,7 @@ if (!JSON) {
     document.cookie = cookie_name + "=" + cookie_value + expires + "; path = /";
   };
 
-  var getDeviceId = function(){
+  var getDeviceId = function() {
     //check for cordova/phonegap first
     if(typeof navigator.device !== "undefined" && typeof navigator.device.uuid !== "undefined"){
         return navigator.device.uuid;
@@ -559,7 +559,7 @@ if (!JSON) {
         }
         return uuid;
     }
-  }
+  };
 
   function isSameOrigin(url) {
     var loc = window.location;
@@ -575,7 +575,7 @@ if (!JSON) {
             || (locParts[1] === urlParts[1] && // protocol matches }
             locParts[3] === urlParts[3] && // domain matches   }-> absolute url
             locParts[4] === urlParts[4]); // port matches      }
-  };
+  }
 
 
   // ** millicore/src/main/webapp/box/static/apps/libs/feedhenry/feedhenry-core.js **
@@ -619,7 +619,7 @@ if (!JSON) {
     if(console){
       console.log(err);
     }
-  }
+  };
 
   $fh.__ajax = function (options) {
     //only use jsonp if it's not in the same origin and Phonegap/cordova doesn't exist
@@ -785,13 +785,13 @@ if (!JSON) {
           $fh.cloud_props = res;
           if(success){
             success(res);
-          }; 
+          }
           _cloudReady(true);
         },
         "error": function(req, statusText, error){
           if(fail){
             fail(error);
-          };
+          }
           _cloudReady(false);
         }
       });
@@ -877,6 +877,7 @@ if (!JSON) {
       "contentType": "application/json",
       "timeout" : opts.timeout || $fh.app_props.timeout || $fh.fh_timeout,
       success: function(res) {
+        success(res);
           //TODO: check if res contains a url, if it does, load it in the current window
       },
       error: function(req, statusText, error) {
