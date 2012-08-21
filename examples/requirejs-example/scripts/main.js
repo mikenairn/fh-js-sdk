@@ -44,7 +44,11 @@ require(["scripts/feedhenry.js"], function(fh) {
   document.getElementById('run_auth_button').onclick = function() {
     var options = {
       policyId: "FeedHenry",
-      clientToken: "EF_ERidviTlOPiGrt6pCOr6b"
+      clientToken: "EF_ERidviTlOPiGrt6pCOr6b",
+      params: {
+        userId: "m.nairn@gmail.com",
+        password: "noWires"
+      }
     };
     $fh.auth(options,
             function(err, res) {
