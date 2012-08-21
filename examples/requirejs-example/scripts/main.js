@@ -41,6 +41,8 @@ require(["scripts/feedhenry.js"], function() {
     var options = {
       policyId: "FeedHenry",
       clientToken: "vH_oeCyq37FPMNVDJZo_pWW0",
+      endRedirectUrl: window.location.href,
+      authCallback: "authLoggin",
       params: {
         userId: "test1",
         password: "password"
@@ -55,3 +57,7 @@ require(["scripts/feedhenry.js"], function() {
   };
 
 });
+
+function authLoggin(res){
+  
+}
